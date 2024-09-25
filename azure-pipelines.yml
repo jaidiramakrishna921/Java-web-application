@@ -14,7 +14,7 @@ stages:
   - job: MavenPackageAndPublishArtifacts
     displayName: Maven Package and Publish Artifacts
     pool:
-      vmImage: $(vmImageName)
+      vmImage: $(vmImageName)  # Using the default agent pool (ubuntu-latest)
     steps:
     - task: Maven@4
       displayName: 'Maven Package'
@@ -33,9 +33,9 @@ stages:
       inputs:
         SourceFolder: '$(System.DefaultWorkingDirectory)'
         Contents: '**/target/*.?(war|jar)'
-        TargetFolder: $(Build.ArtifactStagingDirectory)
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
 
-    - upload: $(Build.ArtifactStagingDirectory)
+    - upload: '$(Build.ArtifactStagingDirectory)'
       artifact: drop
 
 - stage: Deploy
@@ -47,7 +47,7 @@ stages:
     displayName: Deploy Linux Web App
     environment: $(environmentName)
     pool:
-      vmImage: $(vmImageName)
+      vmImage: $(vmImageName)  # Using the default agent pool for deployment
     strategy:
       runOnce:
         deploy:
@@ -55,7 +55,7 @@ stages:
           - task: AzureWebApp@1
             displayName: 'Azure Web App Deploy: Javawebapp001'
             inputs:
-              azureSubscription: $(azureSubscription)
+              azureSubscription: $(azureSubscription)  # Ensure this references the correct service connection
               appType: webAppLinux
               appName: $(webAppName)
               package: '$(Build.ArtifactStagingDirectory)/**/*.war'
