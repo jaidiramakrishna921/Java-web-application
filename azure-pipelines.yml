@@ -14,7 +14,7 @@ stages:
   - job: MavenPackageAndPublishArtifacts
     displayName: Maven Package and Publish Artifacts
     pool:
-      vmImage: $(vmImageName)  # Using the default agent pool (ubuntu-latest)
+      vmImage: $(vmImageName)  # Corrected: Only one vmImage
     steps:
     - task: Maven@4
       displayName: 'Maven Package'
@@ -22,7 +22,7 @@ stages:
         mavenPomFile: 'pom.xml'
         mavenOptions: '-Xmx3072m'
         javaHomeOption: 'JDKVersion'
-        jdkVersionOption: '1.17' 
+        jdkVersionOption: '1.17'
         jdkArchitectureOption: 'x64'
         publishJUnitResults: true
         testResultsFiles: '**/surefire-reports/TEST-*.xml'
@@ -33,13 +33,16 @@ stages:
       inputs:
         SourceFolder: '$(System.DefaultWorkingDirectory)'
         Contents: '**/target/*.?(war|jar)'
-        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'  # Keep only one TargetFolder
 
-    - upload: '$(Build.ArtifactStagingDirectory)'
-      artifact: drop
+    - task: PublishPipelineArtifact@1
+      displayName: 'Upload Artifact'
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        artifact: drop
 
 - stage: Deploy
-  displayName: Deploy stage
+  displayName: Deploy Linux Web App
   dependsOn: Build
   condition: succeeded()
   jobs:
@@ -47,7 +50,7 @@ stages:
     displayName: Deploy Linux Web App
     environment: $(environmentName)
     pool:
-      vmImage: $(vmImageName)  # Using the default agent pool for deployment
+      vmImage: $(vmImageName)  # Corrected: Only one vmImage
     strategy:
       runOnce:
         deploy:
@@ -55,7 +58,7 @@ stages:
           - task: AzureWebApp@1
             displayName: 'Azure Web App Deploy: Javawebapp001'
             inputs:
-              azureSubscription: $(azureSubscription)  # Ensure this references the correct service connection
+              azureSubscription: $(azureSubscription)  # Corrected: Only one azureSubscription
               appType: webAppLinux
               appName: $(webAppName)
               package: '$(Build.ArtifactStagingDirectory)/**/*.war'
